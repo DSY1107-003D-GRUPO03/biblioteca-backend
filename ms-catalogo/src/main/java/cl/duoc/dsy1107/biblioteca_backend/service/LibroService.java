@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import cl.duoc.dsy1107.biblioteca_backend.exception.RecursoNoEncontradoException;
+import cl.duoc.dsy1107.biblioteca_backend.exception.SinStockException;
 import cl.duoc.dsy1107.biblioteca_backend.messaging.publisher.LibroEventPublisher;
 import cl.duoc.dsy1107.biblioteca_backend.model.Libro;
 import cl.duoc.dsy1107.biblioteca_backend.repository.LibroRepository;
@@ -42,5 +43,26 @@ public class LibroService {
         libroRepository.delete(libro);
         eventPublisher.libroEliminado(libro);
     }
+
+    @Transactional 
+    public Libro reservarStock(Long id) {
+        Libro libro = obtenerPorId(id);
+        if(libroRepository.descontarStock(id) == 0) {
+            throw new SinStockException("No hay stock disponible para el libro: " + libro.getTitulo());
+        }
+        Libro actualizado = obtenerPorId(id);
+        if(actualizado.getStock() == 0) {
+            eventPublisher.stockAgotado(actualizado);
+        }
+        return actualizado;
+    }
+
+    @Transactional 
+    public Libro liberarStock(Long id) {
+        obtenerPorId(id);
+        libroRepository.sumarStock(id);
+        return obtenerPorId(id);
+    }
+
 
 }

@@ -16,16 +16,20 @@ public class LibroEventPublisher {
     private final MessagingProperties props;
 
     public void libroCreado(Libro l) {
-        publicar(props.rk().libroCreado(), l);
+        publicar(props.exchange().events(), props.rk().libroCreado(), l);
     }
 
     public void libroEliminado(Libro l) {
-        publicar(props.rk().libroEliminado(), l);
+        publicar(props.exchange().events(), props.rk().libroEliminado(), l);
     }
 
-    private void publicar(String routingKey, Libro l) {
+    public void stockAgotado(Libro l) {
+        publicar(props.exchange().direct(), props.rk().stockAgotado(), l);
+    }
+
+    private void publicar(String exchange, String routingKey, Libro l) {
         LibroEvento evento = LibroEvento.de(routingKey, l.getId(), l.getTitulo(), l.getIsbn(), l.getStock());
-        rabbitTemplate.convertAndSend(props.exchange().events(), routingKey, evento, m -> {
+        rabbitTemplate.convertAndSend(exchange, routingKey, evento, m -> {
             m.getMessageProperties().setMessageId(evento.eventId());
             m.getMessageProperties().setType(routingKey);
             return m;
