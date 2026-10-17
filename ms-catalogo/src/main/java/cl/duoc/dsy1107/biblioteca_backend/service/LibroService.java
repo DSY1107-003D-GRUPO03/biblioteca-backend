@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import cl.duoc.dsy1107.biblioteca_backend.exception.RecursoNoEncontradoException;
+import cl.duoc.dsy1107.biblioteca_backend.messaging.publisher.LibroEventPublisher;
 import cl.duoc.dsy1107.biblioteca_backend.model.Libro;
 import cl.duoc.dsy1107.biblioteca_backend.repository.LibroRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 public class LibroService {
     
     private final LibroRepository libroRepository;
+    private final LibroEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<Libro> obtenerLibros() {
@@ -29,12 +31,16 @@ public class LibroService {
 
     @Transactional
     public Libro crearLibro(Libro libro) {
-        return libroRepository.save(libro);
+        Libro guardado = libroRepository.save(libro);
+        eventPublisher.libroCreado(libro);
+        return guardado;
     }
 
     @Transactional
     public void eliminarLibro(Long id) {
-        libroRepository.delete(obtenerPorId(id));
+        Libro libro = obtenerPorId(id);
+        libroRepository.delete(libro);
+        eventPublisher.libroEliminado(libro);
     }
 
 }
