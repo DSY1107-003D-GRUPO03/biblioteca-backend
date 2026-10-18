@@ -387,7 +387,9 @@ Elimina un binding. El cuerpo identifica el binding, con los mismos campos que a
 | 204 | Sin cuerpo |
 | 400 | Error de validación |
 | 401 / 403 | Error |
-| 404 | Error: el binding no existe |
+| 404 | Error: el exchange o la cola no existen |
+
+Si el exchange y la cola existen pero el binding no, responde 204: la operación es idempotente (RabbitMQ no avisa si no había nada que borrar).
 
 ---
 
