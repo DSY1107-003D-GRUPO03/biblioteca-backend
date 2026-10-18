@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import cl.duoc.dsy1107.biblioteca_backend.dto.NuevoLibro;
 import cl.duoc.dsy1107.biblioteca_backend.model.Libro;
 import cl.duoc.dsy1107.biblioteca_backend.service.LibroService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -22,7 +24,7 @@ public class LibroAdminController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Libro crear(@RequestBody Libro libro) {
+    public Libro crear(@Valid @RequestBody NuevoLibro libro) {
         return libroService.crearLibro(libro);
     }
 

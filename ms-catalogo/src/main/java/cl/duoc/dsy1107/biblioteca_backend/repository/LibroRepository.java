@@ -17,4 +17,5 @@ public interface LibroRepository extends JpaRepository<Libro, Long>{
     @Query("update Libro l set l.stock = l.stock + 1 where l.id = :id")
     int sumarStock(@Param("id") Long id);
 
+    boolean existsByIsbn(String isbn);
 }

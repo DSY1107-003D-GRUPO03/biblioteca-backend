@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import cl.duoc.dsy1107.biblioteca_backend.dto.NuevoLibro;
+import cl.duoc.dsy1107.biblioteca_backend.exception.IsbnDuplicadoException;
 import cl.duoc.dsy1107.biblioteca_backend.exception.RecursoNoEncontradoException;
 import cl.duoc.dsy1107.biblioteca_backend.exception.SinStockException;
 import cl.duoc.dsy1107.biblioteca_backend.messaging.publisher.LibroEventPublisher;
@@ -31,9 +33,20 @@ public class LibroService {
     }
 
     @Transactional
-    public Libro crearLibro(Libro libro) {
+    public Libro crearLibro(NuevoLibro nuevo) {
+
+        if (libroRepository.existsByIsbn(nuevo.isbn())) {
+            throw new IsbnDuplicadoException(nuevo.isbn());
+        }
+
+        Libro libro = new Libro();
+        libro.setTitulo(nuevo.titulo());
+        libro.setAutor(nuevo.autor());
+        libro.setIsbn(nuevo.isbn());
+        libro.setStock(nuevo.stock());
+
         Libro guardado = libroRepository.save(libro);
-        eventPublisher.libroCreado(libro);
+        eventPublisher.libroCreado(guardado);
         return guardado;
     }
 
