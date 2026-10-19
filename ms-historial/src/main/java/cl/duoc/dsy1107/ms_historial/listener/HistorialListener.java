@@ -31,6 +31,21 @@ public class HistorialListener {
         String eventId = String.valueOf(evento.get("eventId"));
         long[] esperas = {1000, 2000, 4000};
 
+        if (evento.get("eventId") == null
+        || evento.get("tipo") == null
+        || evento.get("prestamoId") == null
+        || evento.get("libroId") == null
+        || evento.get("usuario") == null) {
+
+            log.error(
+                    "Evento inválido enviado a DLQ. eventId={}, cola=historial.queue, causa=Faltan campos obligatorios",
+                    eventId
+            );
+
+            canal.basicNack(deliveryTag, false, false);
+            return;
+        }
+
         for (int intento = 0; intento <= 3; intento++) {
             try {
                 historialService.registrar(evento);
