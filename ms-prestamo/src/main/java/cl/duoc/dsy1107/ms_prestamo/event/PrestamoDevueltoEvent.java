@@ -7,6 +7,7 @@ public record PrestamoDevueltoEvent(
     String tipo,
     Long prestamoId,
     Long libroId,
+    String titulo,
     String usuario,
     Instant fechaDevolucionReal,
     String estado

@@ -23,6 +23,7 @@ public class Prestamo {
     private Long id;
 
     private Long libroId;
+    private String titulo;
     private String usuario;
     private Instant fechaPrestamo;
     private Instant fechaDevolucionEstimada;
