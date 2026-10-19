@@ -1,6 +1,5 @@
 package cl.duoc.dsy1107.ms_historial.config;
 
-import java.util.Map;
 
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Binding;
@@ -15,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler;
-import org.springframework.util.ErrorHandler;
 
 @Configuration
 public class RabbitConfig {
@@ -24,6 +22,8 @@ public class RabbitConfig {
     public static final String QUEUE_HISTORIAL = "historial.queue";
     public static final String EXCHANGE_DLX = "biblioteca.dlx";
     public static final String DLQ_HISTORIAL = "historial.queue.dlq";
+    public static final String RK_PRESTAMO = "prestamo.*";
+    public static final String RK_LIBRO = "libro.*";
 
     @Bean
     public TopicExchange exchange() {
@@ -52,12 +52,14 @@ public class RabbitConfig {
                 .build();
     }
 
-    @Bean
-    public Binding bindingHistorial(
-            Queue historialQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(historialQueue)
-                .to(exchange)
-                .with("prestamo.*");
+    @Bean 
+    public Binding bindingHistorialPrestamo(Queue historialQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(historialQueue).to(exchange).with(RK_PRESTAMO);
+    }
+
+    @Bean 
+    public Binding bindingHistorialLibro(Queue historialQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(historialQueue).to(exchange).with(RK_LIBRO);
     }
 
     @Bean
