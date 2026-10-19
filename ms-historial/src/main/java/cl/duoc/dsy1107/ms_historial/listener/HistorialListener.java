@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import com.rabbitmq.client.Channel;
 import cl.duoc.dsy1107.ms_historial.service.HistorialService;
 import lombok.RequiredArgsConstructor;
+import cl.duoc.dsy1107.ms_historial.config.RabbitConfig;
 
 @Component
 @RequiredArgsConstructor
@@ -19,7 +20,7 @@ public class HistorialListener {
 
     private final HistorialService historialService;
 
-        @RabbitListener(queues = "historial.queue")
+    @RabbitListener(queues = RabbitConfig.QUEUE_HISTORIAL)
     public void recibir(
             Map<String, Object> evento,
             Message mensaje,
@@ -33,9 +34,10 @@ public class HistorialListener {
 
         if (evento.get("eventId") == null
         || evento.get("tipo") == null
-        || evento.get("prestamoId") == null
         || evento.get("libroId") == null
-        || evento.get("usuario") == null) {
+        || (evento.get("tipo").toString().startsWith("prestamo.")
+            && (evento.get("prestamoId") == null
+                || evento.get("usuario") == null))) {
 
             log.error(
                     "Evento inválido enviado a DLQ. eventId={}, cola=historial.queue, causa=Faltan campos obligatorios",
