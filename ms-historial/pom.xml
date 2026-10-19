@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>cl.duoc.dsy1107</groupId>
-	<artifactId>biblioteca-backend</artifactId>
+	<artifactId>ms-historial</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>
