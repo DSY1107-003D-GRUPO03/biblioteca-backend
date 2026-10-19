@@ -10,7 +10,7 @@ public record LibroEvento(
     String titulo,
     String isbn,
     Integer stock,
-    Instant ocurriedoEn
+    Instant ocurridoEn
 ) {
     public static LibroEvento de(String tipo, Long libroId, String titulo, String isbn, Integer stock) {
         return new LibroEvento(UUID.randomUUID().toString(), tipo, libroId, titulo, isbn, stock, Instant.now());
