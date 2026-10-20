@@ -22,6 +22,11 @@ public class NotificacionService {
             return;
         }
 
+        //Solo para demostrar reintentos y DLQ: un título "FALLAR" simula un fallo de procesamiento
+        if ("FALLAR".equals(evento.path("titulo").asText())) {
+            throw new IllegalStateException("Fallo simulado de procesamiento");
+        }
+
         String tipo = evento.get("tipo").asText();
         switch (tipo) {
             case "prestamo.creado" -> log.info(
