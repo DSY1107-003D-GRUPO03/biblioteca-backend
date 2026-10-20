@@ -4,21 +4,24 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import cl.duoc.dsy1107.ms_historial.model.HistorialEntry;
-import cl.duoc.dsy1107.ms_historial.repository.HistorialRepository;
+import cl.duoc.dsy1107.ms_historial.dto.EntradaHistorial;
+import cl.duoc.dsy1107.ms_historial.service.HistorialService;
 import lombok.RequiredArgsConstructor;
 
-@RestController 
-@RequestMapping("/historial")
-@RequiredArgsConstructor 
+@RestController
+@RequestMapping("/api/historial")
+@RequiredArgsConstructor
 public class HistorialController {
-    
-    private final HistorialRepository historialRepository;
+
+    private final HistorialService historialService;
 
     @GetMapping
-    public List<HistorialEntry> listar() {
-        return historialRepository.findAll();
+    public List<EntradaHistorial> listar(
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String usuario) {
+        return historialService.listar(tipo, usuario);
     }
 }
