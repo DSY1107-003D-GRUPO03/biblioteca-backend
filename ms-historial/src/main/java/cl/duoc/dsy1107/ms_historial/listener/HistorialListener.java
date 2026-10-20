@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import com.rabbitmq.client.Channel;
 import cl.duoc.dsy1107.ms_historial.service.HistorialService;
 import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.ObjectMapper;
 import cl.duoc.dsy1107.ms_historial.config.RabbitConfig;
 
 @Component
@@ -19,15 +20,31 @@ public class HistorialListener {
             LoggerFactory.getLogger(HistorialListener.class);
 
     private final HistorialService historialService;
+    private final ObjectMapper mapper;
 
     @RabbitListener(queues = RabbitConfig.QUEUE_HISTORIAL)
-    public void recibir(
-            Map<String, Object> evento,
-            Message mensaje,
-            Channel canal) throws IOException {
+    public void recibir(Message mensaje, Channel canal) throws IOException {
 
         long deliveryTag =
                 mensaje.getMessageProperties().getDeliveryTag();
+
+        // El JSON se lee aquí (y no en el conversor de Spring) para rechazar
+        // de forma explícita los mensajes que no se pueden interpretar.
+        Map<String, Object> evento;
+        try {
+            evento = leerEvento(mensaje.getBody());
+        } catch (Exception e) {
+            evento = null;
+        }
+
+        if (evento == null) {
+            log.error(
+                    "Evento inválido enviado a DLQ. eventId=desconocido, cola=historial.queue, causa=JSON inválido"
+            );
+
+            canal.basicNack(deliveryTag, false, false);
+            return;
+        }
 
         String eventId = String.valueOf(evento.get("eventId"));
         long[] esperas = {1000, 2000, 4000};
@@ -79,5 +96,10 @@ public class HistorialListener {
                 }
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> leerEvento(byte[] cuerpo) {
+        return mapper.readValue(cuerpo, Map.class);
     }
 }

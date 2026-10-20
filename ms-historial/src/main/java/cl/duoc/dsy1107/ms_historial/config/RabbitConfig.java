@@ -85,7 +85,6 @@ public class RabbitConfig {
                 new SimpleRabbitListenerContainerFactory();
 
         factory.setConnectionFactory(connectionFactory);
-        factory.setMessageConverter(messageConverter);
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         factory.setDefaultRequeueRejected(false);
         factory.setErrorHandler(new ConditionalRejectingErrorHandler());
