@@ -1,5 +1,9 @@
 package cl.duoc.dsy1107.ms_historial.security;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +17,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 public class SecurityConfig {
@@ -21,13 +28,14 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .cors(withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/historial").authenticated()
                 .anyRequest().denyAll())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
         return http.build();
-    }
+    }   
 
     @Bean
     JwtDecoder jwtDecoder(
@@ -40,5 +48,20 @@ public class SecurityConfig {
         decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 issuerValidator, new AudienceValidator(audience)));
         return decoder;
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "https://d1hfr6439g58qk.cloudfront.net"
+        ));
+        configuration.setAllowedMethods(List.of("GET", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
