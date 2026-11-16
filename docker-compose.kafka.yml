@@ -1,0 +1,186 @@
+# Kafka con 3 nodos de Zookeeper y 3 brokers.
+# Levantar primero este archivo y luego docker-compose.kafka-ui.yml.
+name: biblioteca-kafka
+
+x-zookeeper: &zookeeper
+  image: confluentinc/cp-zookeeper:7.6.1
+  restart: unless-stopped
+  networks:
+    - kafka-net
+
+x-zookeeper-env: &zookeeper-env
+  ZOOKEEPER_CLIENT_PORT: 2181
+  ZOOKEEPER_TICK_TIME: 2000
+  ZOOKEEPER_INIT_LIMIT: 5
+  ZOOKEEPER_SYNC_LIMIT: 2
+  ZOOKEEPER_SERVERS: zookeeper1:2888:3888;zookeeper2:2888:3888;zookeeper3:2888:3888
+  KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
+
+x-kafka: &kafka
+  image: confluentinc/cp-kafka:7.6.1
+  restart: unless-stopped
+  depends_on:
+    - zookeeper1
+    - zookeeper2
+    - zookeeper3
+  networks:
+    - kafka-net
+
+x-kafka-env: &kafka-env
+  KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  # Los tópicos se crean a propósito (kafka-init o ms-kafka-admin), no solos.
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
+
+services:
+  zookeeper1:
+    <<: *zookeeper
+    container_name: zookeeper1
+    hostname: zookeeper1
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 1
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper1-data:/var/lib/zookeeper/data
+      - zookeeper1-log:/var/lib/zookeeper/log
+
+  zookeeper2:
+    <<: *zookeeper
+    container_name: zookeeper2
+    hostname: zookeeper2
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 2
+    ports:
+      - "2182:2181"
+    volumes:
+      - zookeeper2-data:/var/lib/zookeeper/data
+      - zookeeper2-log:/var/lib/zookeeper/log
+
+  zookeeper3:
+    <<: *zookeeper
+    container_name: zookeeper3
+    hostname: zookeeper3
+    environment:
+      <<: *zookeeper-env
+      ZOOKEEPER_SERVER_ID: 3
+    ports:
+      - "2183:2181"
+    volumes:
+      - zookeeper3-data:/var/lib/zookeeper/data
+      - zookeeper3-log:/var/lib/zookeeper/log
+
+  # INTERNAL (kafkaN:29092): entre brokers y para Kafka UI.
+  # EXTERNAL (localhost:909N): para los servicios que corren en tu PC.
+  kafka1:
+    <<: *kafka
+    container_name: kafka1
+    hostname: kafka1
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:29092,EXTERNAL://localhost:9092
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:29092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  kafka2:
+    <<: *kafka
+    container_name: kafka2
+    hostname: kafka2
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 2
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:29092,EXTERNAL://localhost:9093
+    ports:
+      - "9093:9092"     # host 9093 -> contenedor 9092
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:29092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  kafka3:
+    <<: *kafka
+    container_name: kafka3
+    hostname: kafka3
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 3
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:29092,EXTERNAL://localhost:9094
+    ports:
+      - "9094:9092"     # host 9094 -> contenedor 9092
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:29092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # Crea los 2 tópicos del contrato (docs/contratos/eventos-kafka.md) y termina.
+  # Es seguro repetirlo: --if-not-exists.
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka-init
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - kafka-net
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        kafka-topics --bootstrap-server kafka1:29092 --create --if-not-exists \
+          --topic prestamos.eventos --partitions 3 --replication-factor 3 \
+          --config cleanup.policy=delete --config retention.ms=604800000 \
+          --config min.insync.replicas=2
+        kafka-topics --bootstrap-server kafka1:29092 --create --if-not-exists \
+          --topic catalogo.eventos --partitions 3 --replication-factor 3 \
+          --config cleanup.policy=compact \
+          --config min.insync.replicas=2
+        kafka-topics --bootstrap-server kafka1:29092 --list
+
+volumes:
+  zookeeper1-data:
+  zookeeper1-log:
+  zookeeper2-data:
+  zookeeper2-log:
+  zookeeper3-data:
+  zookeeper3-log:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+
+networks:
+  kafka-net:
+    name: biblioteca-kafka-net
+    driver: bridge
