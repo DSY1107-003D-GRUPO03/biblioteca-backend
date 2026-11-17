@@ -9,6 +9,7 @@ import cl.duoc.dsy1107.biblioteca_backend.dto.NuevoLibro;
 import cl.duoc.dsy1107.biblioteca_backend.exception.IsbnDuplicadoException;
 import cl.duoc.dsy1107.biblioteca_backend.exception.RecursoNoEncontradoException;
 import cl.duoc.dsy1107.biblioteca_backend.exception.SinStockException;
+import cl.duoc.dsy1107.biblioteca_backend.messaging.publisher.CatalogoKafkaPublisher;
 import cl.duoc.dsy1107.biblioteca_backend.messaging.publisher.LibroEventPublisher;
 import cl.duoc.dsy1107.biblioteca_backend.model.Libro;
 import cl.duoc.dsy1107.biblioteca_backend.repository.LibroRepository;
@@ -20,6 +21,7 @@ public class LibroService {
     
     private final LibroRepository libroRepository;
     private final LibroEventPublisher eventPublisher;
+    private final CatalogoKafkaPublisher kafkaPublisher;
 
     @Transactional(readOnly = true)
     public List<Libro> obtenerLibros() {
@@ -47,6 +49,8 @@ public class LibroService {
 
         Libro guardado = libroRepository.save(libro);
         eventPublisher.libroCreado(guardado);
+        kafkaPublisher.libroCreado(libro);
+
         return guardado;
     }
 
@@ -55,9 +59,10 @@ public class LibroService {
         Libro libro = obtenerPorId(id);
         libroRepository.delete(libro);
         eventPublisher.libroEliminado(libro);
+        kafkaPublisher.libroEliminado(libro);
     }
 
-    @Transactional 
+    @Transactional
     public Libro reservarStock(Long id) {
         Libro libro = obtenerPorId(id);
         if(libroRepository.descontarStock(id) == 0) {
@@ -66,15 +71,20 @@ public class LibroService {
         Libro actualizado = obtenerPorId(id);
         if(actualizado.getStock() == 0) {
             eventPublisher.stockAgotado(actualizado);
+            kafkaPublisher.stockAgotado(actualizado);
+        } else {
+            kafkaPublisher.libroActualizado(actualizado);
         }
         return actualizado;
     }
 
-    @Transactional 
+    @Transactional
     public Libro liberarStock(Long id) {
         obtenerPorId(id);
         libroRepository.sumarStock(id);
-        return obtenerPorId(id);
+        Libro actualizado = obtenerPorId(id);
+        kafkaPublisher.libroActualizado(actualizado);
+        return actualizado;
     }
 
 
