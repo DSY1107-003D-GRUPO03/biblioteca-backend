@@ -16,6 +16,7 @@ import cl.duoc.dsy1107.ms_prestamo.client.LibroDTO;
 import cl.duoc.dsy1107.ms_prestamo.event.PrestamoCreadoEvent;
 import cl.duoc.dsy1107.ms_prestamo.event.PrestamoDevueltoEvent;
 import cl.duoc.dsy1107.ms_prestamo.event.PrestamoEventPublisher;
+import cl.duoc.dsy1107.ms_prestamo.kafka.PrestamoKafkaPublisher;
 import cl.duoc.dsy1107.ms_prestamo.model.EstadoPrestamo;
 import cl.duoc.dsy1107.ms_prestamo.model.Prestamo;
 import cl.duoc.dsy1107.ms_prestamo.repository.PrestamoRepository;
@@ -28,6 +29,7 @@ public class PrestamoService {
     private final PrestamoRepository prestamoRepository;
     private final LibroClient libroClient;
     private final PrestamoEventPublisher publisher;
+    private final PrestamoKafkaPublisher kafkaPublisher;
 
     public Prestamo crearPrestamo(Long libroId, String usuario, String authorization) {
 
@@ -65,6 +67,8 @@ public class PrestamoService {
             guardado.getEstado().name()
         ));
 
+        kafkaPublisher.publicarCreado(guardado);
+        
         return guardado;
     }
 
@@ -97,6 +101,8 @@ public class PrestamoService {
             guardado.getFechaDevolucionReal(),
             guardado.getEstado().name()
         ));
+
+        kafkaPublisher.publicarDevuelto(guardado);
 
         return guardado;
     }
