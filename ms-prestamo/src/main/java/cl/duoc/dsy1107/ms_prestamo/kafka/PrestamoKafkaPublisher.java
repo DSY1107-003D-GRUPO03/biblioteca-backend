@@ -1,7 +1,5 @@
 package cl.duoc.dsy1107.ms_prestamo.kafka;
 
-import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,13 +24,13 @@ public class PrestamoKafkaPublisher {
         this.topic = topic;
     }
 
-    public void publicarCreado(Prestamo p) {
-        publicar(new PrestamoEventoDto(UUID.randomUUID().toString(), "CREADO",
+    public void publicarCreado(Prestamo p, String eventId) {
+        publicar(new PrestamoEventoDto(eventId, "CREADO",
                 p.getId(), p.getLibroId(), p.getTitulo(), p.getUsuario(), p.getFechaPrestamo()));
     }
 
-    public void publicarDevuelto(Prestamo p) {
-        publicar(new PrestamoEventoDto(UUID.randomUUID().toString(), "DEVUELTO",
+    public void publicarDevuelto(Prestamo p, String eventId) {
+        publicar(new PrestamoEventoDto(eventId, "DEVUELTO",
                 p.getId(), p.getLibroId(), p.getTitulo(), p.getUsuario(), p.getFechaDevolucionReal()));
     }
 

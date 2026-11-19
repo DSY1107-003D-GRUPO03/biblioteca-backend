@@ -55,8 +55,10 @@ public class PrestamoService {
         }
 
         //3. ASINCRONO: publicar por RabbitMQ
+        // El mismo eventId viaja por RabbitMQ y por Kafka: ms-historial detecta el duplicado
+        String eventId = UUID.randomUUID().toString();
         publisher.publicarCreado(new PrestamoCreadoEvent(
-            UUID.randomUUID().toString(),
+            eventId,
             "prestamo.creado",
             guardado.getId(),
             guardado.getLibroId(),
@@ -67,7 +69,7 @@ public class PrestamoService {
             guardado.getEstado().name()
         ));
 
-        kafkaPublisher.publicarCreado(guardado);
+        kafkaPublisher.publicarCreado(guardado, eventId);
         
         return guardado;
     }
@@ -91,8 +93,9 @@ public class PrestamoService {
         prestamo.setFechaDevolucionReal(Instant.now());
         Prestamo guardado = prestamoRepository.save(prestamo);
 
+        String eventId = UUID.randomUUID().toString();
         publisher.publicarDevuelto(new PrestamoDevueltoEvent(
-            UUID.randomUUID().toString(),
+            eventId,
             "prestamo.devuelto",
             guardado.getId(),
             guardado.getLibroId(),
@@ -102,7 +105,7 @@ public class PrestamoService {
             guardado.getEstado().name()
         ));
 
-        kafkaPublisher.publicarDevuelto(guardado);
+        kafkaPublisher.publicarDevuelto(guardado, eventId);
 
         return guardado;
     }
