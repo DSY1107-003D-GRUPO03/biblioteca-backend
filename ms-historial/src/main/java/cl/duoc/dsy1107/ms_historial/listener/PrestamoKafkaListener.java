@@ -44,7 +44,8 @@ public class PrestamoKafkaListener {
         Map<String, Object> datos = new HashMap<>();
 
         datos.put("eventId", evento.eventId());
-        datos.put("tipo", evento.tipo());
+        // Mismo formato que RabbitMQ (prestamo.creado / prestamo.devuelto)
+        datos.put("tipo", evento.tipo() != null ? "prestamo." + evento.tipo().toLowerCase() : null);
         datos.put("prestamoId", evento.prestamoId());
         datos.put("libroId", evento.libroId());
         datos.put("usuario", evento.usuario());
