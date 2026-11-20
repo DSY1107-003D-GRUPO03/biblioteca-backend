@@ -48,6 +48,7 @@ Ambos con `min.insync.replicas=2`.
   "tipo": "CREADO",
   "prestamoId": 101,
   "libroId": 5,
+  "titulo": "Cien años de soledad",
   "usuario": "bM3xQ7f2kLw9TnR8vYcZ1aPdE5uHgJ0sXoI4tKyWq6U",
   "fecha": "2026-11-20T15:30:00Z"
 }
